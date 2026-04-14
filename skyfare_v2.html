@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flight Price Prediction — India's Smartest Fare Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--black2:#111111;--black3:#1a1a1a;--black4:#222222;
+  --yellow:#FFD700;--yellow2:#FFC200;--yellow3:#FFE966;--yellow-pale:#fff8dc;
+  --white:#ffffff;--muted:rgba(255,255,255,0.55);--muted2:rgba(255,255,255,0.35);
+  --glass:rgba(255,255,255,0.05);--gb:rgba(255,215,0,0.18);--card:rgba(15,15,15,0.92);
+  --inp:rgba(255,255,255,0.06);--inpb:rgba(255,215,0,0.25);
+  --shad:0 24px 64px rgba(0,0,0,0.8);--r:10px;--r2:18px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Urbanist',sans-serif;background:var(--black);color:var(--white);min-height:100vh;overflow-x:hidden;line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* HEADER */
+header{background:var(--black);border-bottom:3px solid var(--yellow);padding:0 2.5rem;display:flex;align-items:stretch;justify-content:space-between;gap:1rem;position:sticky;top:0;z-index:200;min-height:64px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;letter-spacing:0.12em;text-decoration:none;color:var(--yellow);display:flex;align-items:center;gap:.5rem;white-space:nowrap;}
+.logo span{color:var(--white);font-size:1.05rem;letter-spacing:.03em;font-family:'Urbanist',sans-serif;font-weight:900;}
+.nav{display:flex;gap:0;align-items:stretch}
+.navbtn{font-family:'Urbanist',sans-serif;font-size:.82rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:0 1.2rem;border:none;background:transparent;color:rgba(255,255,255,0.65);cursor:pointer;transition:all .2s;text-decoration:none;display:flex;align-items:center;border-bottom:3px solid transparent;margin-bottom:-3px;}
+.navbtn:hover{color:var(--yellow);border-bottom-color:var(--yellow)}
+.navbtn.on{color:var(--yellow);border-bottom-color:var(--yellow);background:rgba(255,215,0,0.06)}
+.acc-chip{font-family:'Space Mono',monospace;font-size:.65rem;padding:.25rem .75rem;border-radius:4px;background:var(--yellow);color:var(--black);font-weight:700;display:flex;align-items:center;margin-left:.75rem;}
+
+/* HERO */
+.hero{position:relative;min-height:480px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#050400;}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.5) 55%,rgba(0,0,0,0.95) 100%);z-index:1;}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.hero-content{position:relative;z-index:2;text-align:center;padding:3rem 1.5rem 2rem;width:100%;max-width:820px;}
+.hero-tag{display:inline-flex;align-items:center;gap:.5rem;background:var(--yellow);color:var(--black);font-size:.7rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:.3rem 1rem;border-radius:3px;margin-bottom:1.25rem;}
+.hero-tag .dot{width:6px;height:6px;background:var(--black);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,9vw,6.5rem);line-height:.95;letter-spacing:.04em;color:var(--white);margin-bottom:1rem;}
+.hero h1 em{font-style:normal;color:var(--yellow);text-shadow:0 0 40px rgba(255,215,0,0.45);}
+.hero p{font-size:1.05rem;color:rgba(255,255,255,0.72);max-width:520px;margin:0 auto 2rem;font-weight:400;line-height:1.65;}
+.steps{display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap;}
+.step{display:flex;align-items:center;gap:.45rem;background:rgba(0,0,0,0.55);border:1px solid rgba(255,215,0,0.3);border-radius:6px;padding:.4rem .9rem;font-size:.78rem;font-weight:600;color:rgba(255,255,255,0.85);backdrop-filter:blur(8px);}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--black);font-size:.65rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* YELLOW STRIP */
+/* TICKER STRIP */
+.ticker-wrap{background:var(--yellow);border-bottom:2px solid var(--yellow2);overflow:hidden;position:relative;}
+.ticker-row{display:flex;overflow:hidden;padding:.42rem 0;}
+
+.ticker-track{display:flex;width:max-content;gap:0;}
+.ticker-track.fwd{animation:tickerFwd 28s linear infinite;}
+.ticker-track.rev{animation:tickerRev 32s linear infinite;}
+.ticker-track:hover{animation-play-state:paused;}
+.ticker-set{display:flex;align-items:center;white-space:nowrap;}
+.strip-item{display:inline-flex;align-items:center;gap:.38rem;padding:.2rem .9rem;cursor:pointer;font-size:.76rem;font-weight:800;color:var(--black);letter-spacing:.04em;transition:background .15s;flex-shrink:0;border-radius:4px;}
+.strip-item:hover{background:rgba(0,0,0,0.1);}
+.strip-sep{color:rgba(0,0,0,0.22);font-weight:300;font-size:.85rem;flex-shrink:0;}
+@keyframes tickerFwd{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes tickerRev{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
+
+/* LAYOUT */
+.page-body{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 3rem;display:grid;grid-template-columns:1fr;gap:2rem;align-items:start;}
+@media(max-width:900px){.page-body{grid-template-columns:1fr}}
+
+/* MAIN CARD */
+.main-card{background:var(--black2);border:1px solid rgba(255,215,0,0.15);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shad);}
+.card-header{background:var(--black3);padding:1.25rem 1.75rem;border-bottom:2px solid var(--yellow);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.card-header h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.06em;color:var(--white);}
+.card-header h2 span{color:var(--yellow)}
+.live-pill{display:flex;align-items:center;gap:.45rem;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);padding:.3rem .8rem;border-radius:4px;font-size:.7rem;font-weight:700;letter-spacing:.06em;color:var(--yellow);text-transform:uppercase;}
+.ldot{width:6px;height:6px;background:#4ade80;border-radius:50%;animation:pulse 1.8s ease-in-out infinite}
+
+/* FORM */
+.fgrid{padding:1.5rem 1.75rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;}
+.fg{display:flex;flex-direction:column;gap:.4rem}
+label{font-size:.65rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+label .req{color:var(--yellow);margin-left:2px}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:rgba(255,215,0,0.6);pointer-events:none;font-size:.75rem;}
+select,input[type=date],input[type=time],input[type=number]{width:100%;padding:.6rem .9rem;background:var(--inp);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r);color:var(--white);font-family:'Urbanist',sans-serif;font-size:.9rem;font-weight:500;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border-color .2s,background .2s;}
+select:hover,input:hover{border-color:rgba(255,215,0,0.4)}
+select:focus,input:focus{outline:none;border-color:var(--yellow);background:rgba(255,215,0,0.05);box-shadow:0 0 0 3px rgba(255,215,0,0.12);}
+select option{background:#111;color:#fff}
+.sec-label{grid-column:1/-1;font-size:.65rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);display:flex;align-items:center;gap:.6rem;margin-top:.5rem;}
+.sec-label::after{content:'';flex:1;height:1px;background:rgba(255,215,0,0.15)}
+.divider{grid-column:1/-1;height:1px;background:rgba(255,255,255,0.06)}
+.stop-row{grid-column:1/-1;display:flex;gap:.5rem;flex-wrap:wrap}
+.sb{flex:1;min-width:68px;padding:.55rem .4rem;border:1px solid rgba(255,255,255,0.1);border-radius:var(--r);background:var(--inp);color:rgba(255,255,255,0.5);font-family:'Urbanist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;text-align:center;transition:all .18s;}
+.sb:hover{border-color:rgba(255,215,0,0.4);color:var(--white)}
+.sb.on{background:rgba(255,215,0,0.12);border-color:var(--yellow);color:var(--yellow)}
+.route-ind{grid-column:1/-1;display:none;align-items:center;gap:.6rem;padding:.6rem 1rem;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.2);border-radius:var(--r);font-size:.85rem;color:rgba(255,255,255,0.55);}
+.route-ind strong{color:var(--yellow);font-weight:700}
+
+/* ACTIONS */
+.fa{padding:0 1.75rem 1.5rem;display:flex;gap:.75rem;flex-wrap:wrap}
+.btn-pred{flex:1;min-width:180px;padding:1rem 1.5rem;background:var(--yellow);border:none;border-radius:var(--r);font-family:'Urbanist',sans-serif;font-size:1rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--black);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s,background .2s;box-shadow:0 4px 20px rgba(255,215,0,0.3);}
+.btn-pred::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.25);transform:translateX(-110%) skewX(-15deg);transition:transform .5s ease;}
+.btn-pred:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,215,0,.45);background:var(--yellow3)}
+.btn-pred:hover::before{transform:translateX(130%) skewX(-15deg)}
+.btn-pred:active{transform:translateY(0)}
+.btn-pred:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-rst{padding:1rem 1.25rem;background:transparent;border:1px solid rgba(255,255,255,0.13);border-radius:var(--r);font-family:'Urbanist',sans-serif;font-size:.875rem;font-weight:600;color:rgba(255,255,255,0.45);cursor:pointer;transition:all .2s;}
+.btn-rst:hover{border-color:rgba(255,215,0,0.4);color:var(--yellow)}
+
+/* RESULT */
+.res{margin:0 1.75rem 1.5rem;border-radius:var(--r);border:1px solid rgba(255,215,0,0.25);background:rgba(255,215,0,0.04);display:none;animation:su .4s ease;}
+.res.show{display:block}
+@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.res-top{padding:1.5rem 1.75rem;display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;}
+.res-lbl{font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem;color:rgba(255,255,255,0.38)}
+.res-price{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,6vw,3.2rem);color:var(--yellow);line-height:1;letter-spacing:.02em;}
+.res-sub{font-size:.72rem;color:rgba(255,255,255,0.38);margin-top:.35rem}
+.class-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:4px;font-size:.82rem;font-weight:800;letter-spacing:.04em;margin-top:.25rem;}
+.class-badge.eco{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:#4ade80}
+.class-badge.prem{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:#fbbf24}
+.class-badge.biz{background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.4);color:var(--yellow)}
+.bk-row{display:flex;justify-content:space-between;font-size:.76rem;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:.35rem;margin-bottom:.35rem}
+.bk-k{color:rgba(255,255,255,0.38)}.bk-v{font-family:'Space Mono',monospace;font-weight:700;color:var(--white)}
+.conf-wrap{padding:0 1.75rem 1.25rem}
+.conf-lbl{font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.38);margin-bottom:.45rem;display:flex;justify-content:space-between;}
+.conf-lbl span:last-child{color:var(--yellow);font-weight:700}
+.conf-bg{height:6px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden}
+.conf-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--yellow2) 0%,var(--yellow3) 100%);transition:width .9s cubic-bezier(.34,1.56,.64,1)}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:1.25rem}
+.side-card{background:var(--black2);border:1px solid rgba(255,215,0,0.12);border-radius:var(--r2);overflow:hidden;}
+.side-card-header{background:var(--black3);padding:.9rem 1.25rem;border-bottom:2px solid var(--yellow);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--yellow);}
+.side-card-body{padding:1.1rem 1.25rem}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.stat-item{text-align:center;padding:.75rem .5rem;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.1);border-radius:var(--r)}
+.stat-v{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--yellow);line-height:1;margin-bottom:.2rem}
+.stat-k{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.38)}
+.cc2{padding:.9rem 1rem;border-radius:var(--r);border:1px solid rgba(255,255,255,0.07);margin-bottom:.6rem;transition:border-color .2s;}
+.cc2:last-child{margin-bottom:0}
+.cc2:hover{border-color:rgba(255,215,0,0.3)}
+.cc2-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem}
+.cc2-icon{font-size:1.2rem}
+.cc2-title{font-weight:800;font-size:.9rem}
+.cc2-title.eco{color:#4ade80}.cc2-title.prem{color:#fbbf24}.cc2-title.biz{color:var(--yellow)}
+.cc2-desc{font-size:.75rem;color:rgba(255,255,255,0.42);line-height:1.5;margin-bottom:.4rem}
+.cc2-range{font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700}
+.cc2-range.eco{color:#4ade80}.cc2-range.prem{color:#fbbf24}.cc2-range.biz{color:var(--yellow)}
+.tip-list{display:flex;flex-direction:column;gap:.6rem}
+.tip{display:flex;align-items:flex-start;gap:.6rem;font-size:.8rem;color:rgba(255,255,255,0.55);line-height:1.4;}
+.tip-icon{font-size:1rem;flex-shrink:0;margin-top:.05rem}
+
+/* INFO SECTION */
+.info-section{background:var(--black2);border-top:1px solid rgba(255,215,0,0.1);border-bottom:1px solid rgba(255,215,0,0.1);padding:3rem 1.5rem;}
+.info-section-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:3rem;}
+.info-block-header{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.75rem;}
+.info-block-icon{font-size:2rem;line-height:1;flex-shrink:0;margin-top:.1rem}
+.info-block-title{font-family:'Bebas Neue',sans-serif;font-size:1.85rem;letter-spacing:.06em;color:var(--white);line-height:1;}
+.info-block-title span{color:var(--yellow)}
+.info-block-sub{font-size:.82rem;color:rgba(255,255,255,0.38);margin-top:.3rem;}
+
+/* SEAT CARDS */
+.seat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;}
+@media(max-width:860px){.seat-grid{grid-template-columns:1fr}}
+.seat-card{border-radius:var(--r);padding:1.25rem;background:rgba(255,255,255,0.02);transition:border-color .2s,transform .2s;}
+.seat-card:hover{transform:translateY(-2px);}
+.eco-card{border:1px solid rgba(74,222,128,.25);}
+.eco-card:hover{border-color:rgba(74,222,128,.5);}
+.prem-card{border:1px solid rgba(251,191,36,.25);}
+.prem-card:hover{border-color:rgba(251,191,36,.5);}
+.biz-card{border:1px solid rgba(255,215,0,.3);}
+.biz-card:hover{border-color:rgba(255,215,0,.6);}
+.seat-card-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;}
+.seat-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .8rem;border-radius:4px;font-size:.82rem;font-weight:800;letter-spacing:.04em;}
+.eco-badge{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:#4ade80}
+.prem-badge{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:#fbbf24}
+.biz-badge{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);color:var(--yellow)}
+.seat-pct{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.28);background:rgba(255,255,255,0.05);padding:.2rem .6rem;border-radius:3px;}
+.seat-price-range{font-family:'Space Mono',monospace;font-size:1.05rem;font-weight:700;margin-bottom:.85rem;letter-spacing:.02em;}
+.eco-range{color:#4ade80}.prem-range{color:#fbbf24}.biz-range{color:var(--yellow)}
+.seat-divider{height:1px;background:rgba(255,255,255,0.07);margin-bottom:.85rem;}
+.seat-airlines{font-size:.75rem;color:rgba(255,255,255,0.4);margin-bottom:.75rem;line-height:1.5;}
+.seat-airlines strong{color:rgba(255,255,255,0.6)}
+.seat-features{list-style:none;display:flex;flex-direction:column;gap:.4rem;}
+.seat-features li{font-size:.78rem;color:rgba(255,255,255,0.5);padding-left:1.1rem;position:relative;line-height:1.45;}
+.seat-features li::before{content:'✓';position:absolute;left:0;color:rgba(255,215,0,0.55);font-weight:700;font-size:.7rem;}
+
+/* TIP CARDS */
+.tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+@media(max-width:860px){.tips-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.tips-grid{grid-template-columns:1fr}}
+.tip-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);padding:1.1rem 1.15rem;transition:border-color .2s,background .2s;}
+.tip-card:hover{border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.03);}
+.tip-card-icon{font-size:1.5rem;margin-bottom:.55rem;line-height:1;}
+.tip-card-title{font-size:.88rem;font-weight:800;color:var(--white);margin-bottom:.35rem;letter-spacing:.02em;}
+.tip-card-desc{font-size:.76rem;color:rgba(255,255,255,0.45);line-height:1.55;}
+
+
+.fi-section{max-width:1100px;margin:0 auto 5rem;padding:0 1.5rem}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.06em;color:var(--white);margin-bottom:.3rem;}
+.section-title span{color:var(--yellow)}
+.section-sub{font-size:.85rem;color:rgba(255,255,255,0.38);margin-bottom:1.5rem}
+.fi-list{display:flex;flex-direction:column;gap:.55rem}
+.fi-row{display:grid;grid-template-columns:150px 1fr 54px;align-items:center;gap:.9rem}
+.fi-n{font-size:.75rem;color:rgba(255,255,255,0.45);font-family:'Space Mono',monospace}
+.fi-bg{height:8px;background:rgba(255,255,255,.04);border-radius:100px;overflow:hidden}
+.fi-bar{height:100%;border-radius:100px}
+.fi-p{font-size:.7rem;font-family:'Space Mono',monospace;text-align:right;font-weight:700}
+
+/* FOOTER */
+footer{background:var(--black);border-top:3px solid var(--yellow);padding:1.25rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.fl{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--yellow);}
+.footer-mid{font-size:.72rem;color:rgba(255,255,255,0.28);}
+.footer-social{display:flex;align-items:center;gap:.5rem;}
+.social-icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;padding:0;}
+.social-icon-btn:hover{transform:translateY(-2px);border-color:rgba(255,215,0,0.4);background:rgba(255,255,255,0.1);}
+.social-icon-btn svg{display:block;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(239,68,68,.95);color:#fff;padding:.6rem 1.4rem;border-radius:6px;font-size:.82rem;font-weight:700;font-family:'Urbanist',sans-serif;opacity:0;pointer-events:none;transition:all .3s;z-index:999;backdrop-filter:blur(12px);white-space:nowrap;border:1px solid rgba(255,255,255,0.15);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:rgba(34,197,94,.95)}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:ro .7s linear infinite;vertical-align:middle;margin-right:7px;}
+@keyframes ro{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+
+@media(max-width:700px){
+  header{padding:0 1rem}.nav-title{display:none}.navbtn{padding:0 .75rem;font-size:.72rem}
+  .hero{min-height:360px}.hero h1{font-size:3rem}
+  .res-top{grid-template-columns:1fr 1fr}.res-top .res-block:last-child{grid-column:1/-1}
+  .fi-row{grid-template-columns:110px 1fr 44px}.page-body{padding:1.5rem 1rem 3rem}
+  footer{padding:1.25rem 1rem}.ticker-wrap{padding:.45rem 0}
+}
+
+/* DATA VIZ SECTION */
+.viz-section{background:var(--black);border-top:1px solid rgba(255,215,0,0.1);padding:3.5rem 1.5rem 4rem;}
+.viz-inner{max-width:1100px;margin:0 auto;}
+.viz-header{margin-bottom:2rem;}
+.viz-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.06em;color:var(--white);margin-bottom:.3rem;}
+.viz-title span{color:var(--yellow)}
+.viz-sub{font-size:.82rem;color:rgba(255,255,255,0.35);margin-bottom:1.5rem;}
+.chart-tabs{display:flex;gap:.5rem;flex-wrap:wrap;}
+.ctab{font-family:'Urbanist',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.45rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.45);cursor:pointer;transition:all .2s;}
+.ctab:hover{border-color:rgba(255,215,0,0.35);color:rgba(255,255,255,0.8);}
+.ctab.on{background:rgba(255,215,0,0.1);border-color:var(--yellow);color:var(--yellow);}
+.chart-wrap{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r2);padding:1.5rem;margin-bottom:1.25rem;position:relative;min-height:340px;}
+.chart-wrap canvas{max-height:360px;}
+.viz-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+@media(max-width:700px){.viz-stats{grid-template-columns:1fr 1fr;}.chart-tabs{gap:.35rem;}.ctab{font-size:.68rem;padding:.35rem .7rem;}}
+.vs{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);padding:.8rem 1rem;text-align:center;}
+.vs-v{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--white);line-height:1;margin-bottom:.2rem;}
+.vs-k{font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,0.3);}
+
+.signin-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
+.signin-overlay.show{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.signin-box{background:#141414;border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:2rem 2rem 1.5rem;width:100%;max-width:380px;position:relative;box-shadow:0 32px 80px rgba(0,0,0,0.8);animation:slideUp .25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.signin-close{position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.4);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.signin-close:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.signin-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.05em;color:#fff;text-align:center;margin-bottom:.25rem;}
+.signin-sub{font-size:.75rem;color:rgba(255,255,255,0.35);text-align:center;margin-bottom:1.5rem;}
+.signin-field{margin-bottom:1rem;}
+.signin-label{display:block;font-size:.65rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:.4rem;}
+.signin-input{width:100%;padding:.65rem .9rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Urbanist',sans-serif;font-size:.9rem;transition:border-color .2s,background .2s;}
+.signin-input:focus{outline:none;border-color:var(--yellow);background:rgba(255,215,0,0.05);}
+.signin-error{font-size:.75rem;color:#f87171;margin-bottom:.75rem;display:none;padding:.4rem .7rem;background:rgba(248,113,113,0.1);border-radius:6px;border:1px solid rgba(248,113,113,0.2);}
+.modal-submit{width:100%;padding:.8rem;border:none;border-radius:8px;font-family:'Urbanist',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:1rem;}
+.google-submit{background:#fff;color:#333;}
+.google-submit:hover{background:#f0f0f0;box-shadow:0 4px 16px rgba(255,255,255,0.15);}
+.insta-submit{background:linear-gradient(135deg,#f9a825,#e91e63,#5c35cc);color:#fff;}
+.insta-submit:hover{opacity:.9;box-shadow:0 4px 16px rgba(214,36,159,0.3);}
+.modal-submit:disabled{opacity:.5;cursor:not-allowed;}
+.signin-note{font-size:.65rem;color:rgba(255,255,255,0.2);text-align:center;line-height:1.4;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">✈ <span>Flight Price Prediction</span></a>
+  <nav class="nav">
+    <a class="navbtn on" href="#">Predict</a>
+    <a class="navbtn" href="#seat-info">Seat Classes</a>
+    <a class="navbtn" href="#insights">Charts</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <svg id="hero-canvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="skyBase" cx="50%" cy="0%" r="100%">
+        <stop offset="0%" stop-color="#1c1400"/><stop offset="60%" stop-color="#0d0900"/><stop offset="100%" stop-color="#040300"/>
+      </radialGradient>
+      <radialGradient id="sunGlow" cx="50%" cy="35%" r="45%">
+        <stop offset="0%" stop-color="#FFD700" stop-opacity="0.3"/><stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="trl" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#FFD700" stop-opacity="0"/><stop offset="100%" stop-color="#FFD700" stop-opacity="0.65"/>
+      </linearGradient>
+      <linearGradient id="trl2" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#FFE966" stop-opacity="0"/><stop offset="100%" stop-color="#FFE966" stop-opacity="0.35"/>
+      </linearGradient>
+      <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="bigglow"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <rect width="1440" height="480" fill="url(#skyBase)"/>
+    <rect width="1440" height="480" fill="url(#sunGlow)"/>
+    <!-- Stars -->
+    <g fill="#FFD700" opacity="0.7">
+      <circle cx="80" cy="35" r="1.2"/><circle cx="200" cy="18" r="1.5"/><circle cx="350" cy="50" r="1"/>
+      <circle cx="500" cy="12" r="1.3"/><circle cx="650" cy="30" r="1"/><circle cx="800" cy="8" r="1.5"/>
+      <circle cx="950" cy="42" r="1.1"/><circle cx="1100" cy="22" r="1.3"/><circle cx="1250" cy="48" r="1"/>
+      <circle cx="1380" cy="28" r="1.5"/><circle cx="130" cy="95" r="1"/><circle cx="430" cy="75" r="1"/>
+      <circle cx="720" cy="88" r="1.2"/><circle cx="1050" cy="65" r="1"/><circle cx="1350" cy="80" r="1"/>
+      <circle cx="260" cy="55" r="0.8"/><circle cx="580" cy="20" r="0.9"/><circle cx="870" cy="60" r="0.8"/>
+    </g>
+    <!-- Horizon glow -->
+    <ellipse cx="720" cy="480" rx="900" ry="200" fill="#FFD700" opacity="0.07"/>
+    <ellipse cx="720" cy="480" rx="550" ry="110" fill="#FFD700" opacity="0.06"/>
+    <!-- Contrails -->
+    <path d="M0 195 Q420 95 870 175" stroke="url(#trl)" stroke-width="2" fill="none"/>
+    <path d="M0 235 Q390 135 840 215" stroke="url(#trl)" stroke-width="1" fill="none" opacity="0.5"/>
+    <path d="M120 305 Q520 195 1020 285" stroke="url(#trl2)" stroke-width="1.5" fill="none"/>
+    <path d="M280 138 Q760 55 1320 165" stroke="url(#trl2)" stroke-width="1" fill="none" opacity="0.45"/>
+    <!-- Dotted flight path -->
+    <path d="M55 425 Q510 95 1395 338" stroke="#FFD700" stroke-width="1.3" fill="none" stroke-dasharray="5,14" opacity="0.2"/>
+    <circle cx="55" cy="425" r="5" fill="none" stroke="#FFD700" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="55" cy="425" r="2.5" fill="#FFD700" opacity="0.5"/>
+    <circle cx="1395" cy="338" r="5" fill="none" stroke="#FFD700" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="1395" cy="338" r="2.5" fill="#FFD700" opacity="0.5"/>
+    <!-- City silhouette -->
+    <g fill="#0f0c00">
+      <rect x="0" y="368" width="65" height="112"/><rect x="52" y="342" width="42" height="138"/>
+      <rect x="86" y="357" width="30" height="123"/><rect x="110" y="332" width="48" height="148"/>
+      <rect x="152" y="350" width="34" height="130"/><rect x="180" y="326" width="58" height="154"/>
+      <rect x="232" y="346" width="40" height="134"/><rect x="268" y="338" width="52" height="142"/>
+      <rect x="318" y="360" width="28" height="120"/>
+      <rect x="187" y="305" width="3" height="24"/><circle cx="188" cy="303" r="2.5" fill="#FFD700" opacity="0.9"/>
+      <rect x="1062" y="362" width="72" height="118"/><rect x="1128" y="337" width="52" height="143"/>
+      <rect x="1173" y="355" width="36" height="125"/><rect x="1202" y="329" width="57" height="151"/>
+      <rect x="1253" y="345" width="44" height="135"/><rect x="1292" y="322" width="62" height="158"/>
+      <rect x="1348" y="352" width="92" height="128"/>
+      <rect x="1320" y="300" width="3" height="24"/><circle cx="1321" cy="298" r="2.5" fill="#FFD700" opacity="0.9"/>
+    </g>
+    <!-- Windows -->
+    <g fill="#FFD700" opacity="0.6">
+      <rect x="60" y="352" width="4" height="3"/><rect x="70" y="364" width="4" height="3"/>
+      <rect x="118" y="344" width="4" height="3"/><rect x="130" y="356" width="4" height="3"/>
+      <rect x="188" y="336" width="4" height="3"/><rect x="200" y="348" width="4" height="3"/>
+      <rect x="275" y="348" width="4" height="3"/><rect x="288" y="360" width="4" height="3"/>
+      <rect x="1136" y="348" width="4" height="3"/><rect x="1150" y="360" width="4" height="3"/>
+      <rect x="1210" y="340" width="4" height="3"/><rect x="1224" y="352" width="4" height="3"/>
+      <rect x="1300" y="332" width="4" height="3"/><rect x="1314" y="344" width="4" height="3"/>
+    </g>
+    <!-- Main hero plane -->
+    <g filter="url(#bigglow)">
+      <g fill="#FFD700">
+        <animateTransform attributeName="transform" type="translate" from="-130 195" to="1580 132" dur="22s" repeatCount="indefinite"/>
+        <ellipse cx="0" cy="0" rx="58" ry="9.5"/>
+        <polygon points="-8,-9 22,-9 32,9 -8,9" opacity="0.92"/>
+        <polygon points="-8,9 22,9 30,-5 -6,-5" opacity="0.85"/>
+        <polygon points="-54,-9 -39,-9 -36,-20 -54,-9"/>
+        <polygon points="-54,9 -39,9 -36,18 -54,9"/>
+        <ellipse cx="11" cy="14" rx="11" ry="3.8"/>
+        <ellipse cx="-4" cy="-14" rx="11" ry="3.8"/>
+      </g>
+    </g>
+    <!-- Second plane (smaller, delayed) -->
+    <g filter="url(#glow)" opacity="0.45">
+      <g fill="#FFE966">
+        <animateTransform attributeName="transform" type="translate" from="-90 310" to="1530 255" dur="32s" begin="14s" repeatCount="indefinite"/>
+        <ellipse cx="0" cy="0" rx="38" ry="6.5"/>
+        <polygon points="-5,-6 15,-6 22,6 -5,6"/>
+        <polygon points="-36,-6 -26,-6 -24,-13 -36,-6"/>
+        <ellipse cx="7" cy="9" rx="7" ry="2.5"/>
+      </g>
+    </g>
+    <!-- Radar -->
+    <g opacity="0.1">
+      <circle cx="720" cy="430" r="125" fill="none" stroke="#FFD700" stroke-width="1.2"/>
+      <circle cx="720" cy="430" r="78" fill="none" stroke="#FFD700" stroke-width=".8"/>
+      <circle cx="720" cy="430" r="32" fill="none" stroke="#FFD700" stroke-width=".6"/>
+      <line x1="720" y1="430" x2="720" y2="305" stroke="#FFD700" stroke-width="1.2">
+        <animateTransform attributeName="transform" type="rotate" from="0 720 430" to="360 720 430" dur="6s" repeatCount="indefinite"/>
+      </line>
+    </g>
+  </svg>
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-tag"><div class="dot"></div>Indian Domestic Flights · AI-Powered · Instant Estimate</div>
+    <h1>Predict Your<br/><em>Flight Price</em></h1>
+    <p>Get instant AI-powered fare estimates for Indian domestic flights. Fill in your route, date &amp; airline — we predict the price in seconds.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div>Choose Airline &amp; Route</div>
+      <div class="step"><div class="step-num">2</div>Pick Date &amp; Time</div>
+      <div class="step"><div class="step-num">3</div>Select Stops</div>
+      <div class="step"><div class="step-num">4</div>Get Instant ₹ Estimate</div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker-wrap">
+
+  <!-- ROW 1 — scrolls LEFT (forward) -->
+  <div class="ticker-row">
+    <div class="ticker-track fwd">
+      <div class="ticker-set">
+        <div class="strip-item">✈ One Way</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔄 Round Trip</div><div class="strip-sep">|</div>
+        <div class="strip-item">💺 Economy Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">👑 Business Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">💎 First Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">🏷️ Cheapest Month Finder</div><div class="strip-sep">|</div>
+        <div class="strip-item">📊 Price Alerts</div><div class="strip-sep">|</div>
+        <div class="strip-item">⚡ Flash Sale Fares</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔔 Fare Drop Alerts</div><div class="strip-sep">|</div>
+        <div class="strip-item">🌐 Multi-City Booking</div><div class="strip-sep">|</div>
+        <div class="strip-item">📅 Flexible Dates</div><div class="strip-sep">|</div>
+        <div class="strip-item">🎟️ Group Booking</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔃 Refundable Tickets</div><div class="strip-sep">|</div>
+        <div class="strip-item">🛡️ Travel Insurance</div><div class="strip-sep">|</div>
+        <div class="strip-item">💳 EMI Options</div><div class="strip-sep">|</div>
+        <div class="strip-item">🎫 Student Discount</div><div class="strip-sep">|</div>
+        <div class="strip-item">👴 Senior Citizen Fare</div><div class="strip-sep">|</div>
+        <div class="strip-item">🪖 Armed Forces Fare</div><div class="strip-sep">|</div>
+        <div class="strip-item">🏆 Frequent Flyer Miles</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔑 Lounge Access</div><div class="strip-sep">|</div>
+      </div>
+      <!-- Duplicate for seamless loop -->
+      <div class="ticker-set">
+        <div class="strip-item">✈ One Way</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔄 Round Trip</div><div class="strip-sep">|</div>
+        <div class="strip-item">💺 Economy Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">👑 Business Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">💎 First Class</div><div class="strip-sep">|</div>
+        <div class="strip-item">🏷️ Cheapest Month Finder</div><div class="strip-sep">|</div>
+        <div class="strip-item">📊 Price Alerts</div><div class="strip-sep">|</div>
+        <div class="strip-item">⚡ Flash Sale Fares</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔔 Fare Drop Alerts</div><div class="strip-sep">|</div>
+        <div class="strip-item">🌐 Multi-City Booking</div><div class="strip-sep">|</div>
+        <div class="strip-item">📅 Flexible Dates</div><div class="strip-sep">|</div>
+        <div class="strip-item">🎟️ Group Booking</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔃 Refundable Tickets</div><div class="strip-sep">|</div>
+        <div class="strip-item">🛡️ Travel Insurance</div><div class="strip-sep">|</div>
+        <div class="strip-item">💳 EMI Options</div><div class="strip-sep">|</div>
+        <div class="strip-item">🎫 Student Discount</div><div class="strip-sep">|</div>
+        <div class="strip-item">👴 Senior Citizen Fare</div><div class="strip-sep">|</div>
+        <div class="strip-item">🪖 Armed Forces Fare</div><div class="strip-sep">|</div>
+        <div class="strip-item">🏆 Frequent Flyer Miles</div><div class="strip-sep">|</div>
+        <div class="strip-item">🔑 Lounge Access</div><div class="strip-sep">|</div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+<div class="page-body">
+  <div>
+    <div class="main-card">
+      <div class="card-header">
+        <h2>Flight Price <span>+ Seat Class</span> Estimator</h2>
+        <div class="live-pill"><div class="ldot"></div>v3 · Dual Dataset · 28 Features</div>
+      </div>
+      <div class="fgrid" id="fg">
+        <div class="sec-label">✈ Route Details</div>
+        <div class="fg">
+          <label>Airline <span class="req">*</span></label>
+          <div class="sw"><select id="airline">
+            <option value="">Select airline…</option>
+            <option value="IndiGo">IndiGo</option><option value="Air India">Air India</option>
+            <option value="Jet Airways">Jet Airways</option><option value="Jet Airways Business">Jet Airways Business</option>
+            <option value="SpiceJet">SpiceJet</option><option value="Vistara">Vistara</option>
+            <option value="Vistara Premium economy">Vistara Premium Economy</option><option value="GoAir">GoAir</option>
+            <option value="Multiple carriers">Multiple Carriers</option>
+            <option value="Multiple carriers Premium economy">Multiple Carriers Premium Economy</option>
+            <option value="Air Asia">Air Asia</option><option value="Trujet">Trujet</option>
+          </select></div>
+        </div>
+        <div class="fg">
+          <label>From <span class="req">*</span></label>
+          <div class="sw"><select id="source" onchange="updRoute()">
+            <option value="">Departure city…</option>
+            <option value="Banglore">Bangalore</option><option value="Chennai">Chennai</option>
+            <option value="Delhi">Delhi</option><option value="Kolkata">Kolkata</option><option value="Mumbai">Mumbai</option>
+          </select></div>
+        </div>
+        <div class="fg">
+          <label>To <span class="req">*</span></label>
+          <div class="sw"><select id="dest" onchange="updRoute()">
+            <option value="">Arrival city…</option>
+            <option value="Banglore">Bangalore</option><option value="Cochin">Cochin</option>
+            <option value="Delhi">Delhi</option><option value="Hyderabad">Hyderabad</option>
+            <option value="Kolkata">Kolkata</option><option value="New Delhi">New Delhi</option>
+          </select></div>
+        </div>
+        <div class="fg">
+          <label>Journey Date <span class="req">*</span></label>
+          <input type="date" id="jdate"/>
+        </div>
+        <div class="route-ind" id="route-ind"><span>✈</span><span id="route-txt">—</span></div>
+        <div class="divider"></div>
+        <div class="sec-label">🕐 Time &amp; Duration</div>
+        <div class="fg"><label>Departure Time <span class="req">*</span></label><input type="time" id="dep" onchange="calcDur()"/></div>
+        <div class="fg"><label>Arrival Time <span class="req">*</span></label><input type="time" id="arr" onchange="calcDur()"/></div>
+        <div class="fg"><label>Duration (hrs)</label><input type="number" id="dur" min="0.5" max="30" step="0.5" placeholder="Auto-calculated"/></div>
+        <div class="fg">
+          <label>Additional Info</label>
+          <div class="sw"><select id="info">
+            <option value="0">No info</option><option value="1">In-flight meal not included</option>
+            <option value="2">No check-in baggage included</option><option value="3">1 Short layover</option>
+            <option value="4">1 Long layover</option><option value="5">2 Long layover</option>
+            <option value="6">Change airports</option><option value="7">Red-eye flight</option>
+            <option value="8">Business class</option>
+          </select></div>
+        </div>
+        <div class="divider"></div>
+        <div class="sec-label">🛑 Stops</div>
+        <div class="stop-row" id="stop-row">
+          <button class="sb on" data-v="0">Non-Stop</button>
+          <button class="sb" data-v="1">1 Stop</button>
+          <button class="sb" data-v="2">2 Stops</button>
+          <button class="sb" data-v="3">3 Stops</button>
+          <button class="sb" data-v="4">4 Stops</button>
+        </div>
+      </div>
+      <div class="fa">
+        <button class="btn-pred" id="pbtn" onclick="predict()">✦ Predict Price &amp; Class</button>
+        <button class="btn-rst" onclick="resetForm()">Reset</button>
+      </div>
+      <div class="res" id="res">
+        <div class="res-top">
+          <div class="res-block">
+            <div class="res-lbl">Estimated Fare</div>
+            <div class="res-price" id="res-price">₹0</div>
+            <div class="res-sub" id="res-sub">Estimated fare range</div>
+          </div>
+          <div class="res-block">
+            <div class="res-lbl">Predicted Seat Class</div>
+            <div id="class-badge"></div>
+            <div class="res-sub" id="class-sub">Based on airline, price &amp; route</div>
+          </div>
+
+        </div>
+        <div class="conf-wrap">
+          <div class="conf-lbl"><span>Prediction Confidence</span><span id="conf-pct">—</span></div>
+          <div class="conf-bg"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="info-section" id="seat-info">
+  <div class="info-section-inner">
+
+    <!-- SEAT CLASSES -->
+    <div class="info-block">
+      <div class="info-block-header">
+        <div class="info-block-icon">💺</div>
+        <div>
+          <div class="info-block-title">Seat <span>Classes</span></div>
+          <div class="info-block-sub">Understanding which tier your flight falls into</div>
+        </div>
+      </div>
+      <div class="seat-grid">
+        <div class="seat-card eco-card">
+          <div class="seat-card-top">
+            <div class="seat-badge eco-badge">🪑 Economy</div>
+            <div class="seat-pct eco-pct">72.8% of flights</div>
+          </div>
+          <div class="seat-price-range eco-range">₹1,759 – ₹11,999</div>
+          <div class="seat-divider"></div>
+          <div class="seat-airlines"><strong>Airlines:</strong> IndiGo, SpiceJet, GoAir, Air Asia, Trujet</div>
+          <ul class="seat-features">
+            <li>Standard seat pitch (28–31 inches)</li>
+            <li>Basic carry-on baggage allowance</li>
+            <li>Meal purchase available on select flights</li>
+            <li>Best for short-haul &amp; budget travel</li>
+          </ul>
+        </div>
+        <div class="seat-card prem-card">
+          <div class="seat-card-top">
+            <div class="seat-badge prem-badge">💺 Premium Economy</div>
+            <div class="seat-pct prem-pct">25.8% of flights</div>
+          </div>
+          <div class="seat-price-range prem-range">₹12,000 – ₹19,999</div>
+          <div class="seat-divider"></div>
+          <div class="seat-airlines"><strong>Airlines:</strong> Air India, Jet Airways, Vistara Premium Economy, Multiple Carriers Premium</div>
+          <ul class="seat-features">
+            <li>Extra legroom &amp; wider seats (32–35 inches)</li>
+            <li>Priority check-in &amp; boarding</li>
+            <li>Complimentary meal &amp; extra baggage</li>
+            <li>Best for medium-haul comfort travel</li>
+          </ul>
+        </div>
+        <div class="seat-card biz-card">
+          <div class="seat-card-top">
+            <div class="seat-badge biz-badge">🛫 Business Class</div>
+            <div class="seat-pct biz-pct">1.4% of flights</div>
+          </div>
+          <div class="seat-price-range biz-range">₹20,000 – ₹79,512</div>
+          <div class="seat-divider"></div>
+          <div class="seat-airlines"><strong>Airlines:</strong> Jet Airways Business, Vistara Business Class</div>
+          <ul class="seat-features">
+            <li>Lie-flat seats &amp; maximum privacy</li>
+            <li>Airport lounge access included</li>
+            <li>Premium multi-course dining</li>
+            <li>Best for long-haul &amp; corporate travel</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVING TIPS -->
+    <div class="info-block">
+      <div class="info-block-header">
+        <div class="info-block-icon">💡</div>
+        <div>
+          <div class="info-block-title">Saving <span>Tips</span></div>
+          <div class="info-block-sub">Smart strategies to get the lowest fares on Indian routes</div>
+        </div>
+      </div>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-card-icon">🗓️</div>
+          <div class="tip-card-title">Book Early</div>
+          <div class="tip-card-desc">Book 6–8 weeks in advance to lock in the best domestic fares. Last-minute bookings typically cost 30–50% more.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-icon">🌙</div>
+          <div class="tip-card-title">Off-Peak Hours</div>
+          <div class="tip-card-desc">Early morning (4–8 AM) and late-night departures are consistently 10–20% cheaper than prime-time flights.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-icon">📅</div>
+          <div class="tip-card-title">Avoid Peak Months</div>
+          <div class="tip-card-desc">May, June, November &amp; December see the highest fares. Travel in Jan–Mar or Aug–Sep for better deals.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-icon">🛑</div>
+          <div class="tip-card-title">Consider 1-Stop Flights</div>
+          <div class="tip-card-desc">Non-stop flights are faster but 1-stop options can be up to 20% cheaper — ideal if time isn't critical.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-icon">✈️</div>
+          <div class="tip-card-title">Choose Budget Airlines</div>
+          <div class="tip-card-desc">IndiGo &amp; SpiceJet consistently offer the lowest base fares. Compare before choosing full-service carriers.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-icon">📆</div>
+          <div class="tip-card-title">Mid-Week Flights</div>
+          <div class="tip-card-desc">Tuesday and Wednesday flights are typically cheaper than weekend departures by ₹300–₹800 on average.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="viz-section" id="insights">
+  <div class="viz-inner">
+
+    <div class="viz-header">
+      <div class="viz-title">Data <span>Insights</span></div>
+      <div class="viz-sub">Interactive visualizations derived from 13,354 flight records (dual dataset) · hover for exact values</div>
+      <!-- Chart Tab Switcher -->
+      <div class="chart-tabs">
+        <button class="ctab on" data-chart="airline" onclick="switchChart('airline',this)">✈ Avg Price by Airline</button>
+        <button class="ctab" data-chart="month" onclick="switchChart('month',this)">📅 Price Trend by Month</button>
+        <button class="ctab" data-chart="day" onclick="switchChart('day',this)">📆 Price by Day of Week</button>
+        <button class="ctab" data-chart="stops" onclick="switchChart('stops',this)">🛑 Impact of Stops</button>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="chart-airline"></canvas>
+      <canvas id="chart-month" style="display:none"></canvas>
+      <canvas id="chart-day" style="display:none"></canvas>
+      <canvas id="chart-stops" style="display:none"></canvas>
+    </div>
+
+    <!-- Stats strip below chart -->
+    <div class="viz-stats" id="viz-stats-airline">
+      <div class="vs"><div class="vs-v" style="color:#4ade80">₹4,100</div><div class="vs-k">Lowest Avg (IndiGo)</div></div>
+      <div class="vs"><div class="vs-v" style="color:#FFD700">₹14,000</div><div class="vs-k">Highest Avg (Jet Business)</div></div>
+      <div class="vs"><div class="vs-v">₹6,240</div><div class="vs-k">Overall Average</div></div>
+      <div class="vs"><div class="vs-v">12</div><div class="vs-k">Airlines Tracked</div></div>
+    </div>
+    <div class="viz-stats" id="viz-stats-month" style="display:none">
+      <div class="vs"><div class="vs-v" style="color:#4ade80">₹4,950</div><div class="vs-k">Cheapest Month (Sep)</div></div>
+      <div class="vs"><div class="vs-v" style="color:#f87171">₹7,820</div><div class="vs-k">Priciest Month (Jun)</div></div>
+      <div class="vs"><div class="vs-v">₹420</div><div class="vs-k">Peak vs Off-Peak Diff</div></div>
+      <div class="vs"><div class="vs-v">4</div><div class="vs-k">Peak Months</div></div>
+    </div>
+    <div class="viz-stats" id="viz-stats-day" style="display:none">
+      <div class="vs"><div class="vs-v" style="color:#4ade80">₹5,620</div><div class="vs-k">Cheapest Day (Tue)</div></div>
+      <div class="vs"><div class="vs-v" style="color:#f87171">₹6,410</div><div class="vs-k">Priciest Day (Sun)</div></div>
+      <div class="vs"><div class="vs-v">₹790</div><div class="vs-k">Weekday vs Weekend Gap</div></div>
+      <div class="vs"><div class="vs-v">~15%</div><div class="vs-k">Weekend Premium</div></div>
+    </div>
+    <div class="viz-stats" id="viz-stats-stops" style="display:none">
+      <div class="vs"><div class="vs-v" style="color:#4ade80">₹5,200</div><div class="vs-k">Non-Stop Avg</div></div>
+      <div class="vs"><div class="vs-v" style="color:#fbbf24">₹6,800</div><div class="vs-k">1-Stop Avg</div></div>
+      <div class="vs"><div class="vs-v" style="color:#f87171">₹9,400</div><div class="vs-k">2-Stop Avg</div></div>
+      <div class="vs"><div class="vs-v">+81%</div><div class="vs-k">0→2 Stop Increase</div></div>
+    </div>
+
+  </div>
+</div>
+
+
+<footer>
+  <div class="fl">✈ Flight Price Prediction</div>
+  <div class="footer-mid">Indian Domestic Flights · AI-Powered Estimates</div>
+  <div class="footer-social">
+    <button class="social-icon-btn google-btn" id="google-icon-btn" onclick="signInGoogle()" title="Sign in with Google">
+      <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.7 35.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.3 4.1-4.1 5.5l6.2 5.2C37.9 38.6 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+    </button>
+    <button class="social-icon-btn insta-btn" id="instagram-icon-btn" onclick="signInInstagram()" title="Instagram">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ig1" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig1)"/><path d="M12 7.2A4.8 4.8 0 1 0 12 16.8 4.8 4.8 0 0 0 12 7.2zm0 7.9A3.1 3.1 0 1 1 12 8.9 3.1 3.1 0 0 1 12 15.1zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zm3.1 1.2c-.1-1.4-.4-2.7-1.4-3.7-1-1-2.3-1.3-3.7-1.4C14.7 4 9.3 4 7.9 4.1 6.5 4.2 5.2 4.5 4.2 5.5s-1.3 2.3-1.4 3.7C2.7 10.6 2.7 16 2.8 17.4c.1 1.4.4 2.7 1.4 3.7s2.3 1.3 3.7 1.4C9.3 22.6 14.7 22.6 16.1 22.5c1.4-.1 2.7-.4 3.7-1.4s1.3-2.3 1.4-3.7c.1-1.4.1-6.8 0-8.2zm-2 9.3c-.3.8-.9 1.4-1.7 1.7-1.2.5-4 .4-5.5.4s-4.3.1-5.5-.4c-.8-.3-1.4-.9-1.7-1.7-.5-1.2-.4-4-.4-5.5s-.1-4.3.4-5.5c.3-.8.9-1.4 1.7-1.7 1.2-.5 4-.4 5.5-.4s4.3-.1 5.5.4c.8.3 1.4.9 1.7 1.7.5 1.2.4 4 .4 5.5s.1 4.3-.4 5.5z" fill="#fff"/></svg>
+    </button>
+    <button class="social-icon-btn wa-btn" onclick="shareWhatsApp()" title="Share on WhatsApp">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#25D366"/><path d="M17.5 6.5A7.4 7.4 0 0 0 4.6 15.7L3.5 20.5l5-1.3A7.4 7.4 0 0 0 17.5 6.5zm-5.5 11a6.1 6.1 0 0 1-3.1-.85l-.22-.13-2.97.78.79-2.9-.15-.23A6.1 6.1 0 1 1 12 17.5zm3.35-4.57c-.18-.09-1.08-.53-1.25-.59-.16-.06-.28-.09-.4.09-.12.18-.46.59-.57.71-.1.12-.21.13-.39.04-.18-.09-.77-.28-1.47-.9-.54-.48-.91-1.08-1.01-1.26-.11-.18-.01-.28.08-.37.08-.08.18-.21.27-.32.09-.1.12-.18.18-.3.06-.12.03-.23-.01-.32-.05-.09-.4-.97-.55-1.33-.14-.35-.29-.3-.4-.3h-.34c-.12 0-.31.04-.47.23-.16.18-.62.6-.62 1.47s.63 1.7.72 1.82c.09.12 1.24 1.9 3.01 2.66.42.18.75.29 1.01.37.42.13.81.11 1.11.07.34-.05 1.04-.43 1.19-.84.14-.41.14-.76.1-.84-.05-.08-.17-.13-.36-.22z" fill="#fff"/></svg>
+    </button>
+  </div>
+</footer>
+
+<!-- SIGN-IN MODAL -->
+<div class="signin-overlay" id="signin-modal">
+  <div class="signin-box">
+    <button class="signin-close" onclick="closeModal()">✕</button>
+    <div id="modal-logo" style="margin-bottom:.9rem;display:flex;justify-content:center;"></div>
+    <div class="signin-title" id="modal-title">Sign in</div>
+    <div class="signin-sub">Enter your details to continue</div>
+    <div class="signin-field">
+      <label class="signin-label" id="modal-email-label">Email address</label>
+      <input class="signin-input" type="email" id="modal-email" placeholder="you@example.com"/>
+    </div>
+    <div class="signin-field">
+      <label class="signin-label">Password</label>
+      <input class="signin-input" type="password" id="modal-pass" placeholder="••••••••"/>
+    </div>
+    <div class="signin-error" id="modal-error"></div>
+    <button class="modal-submit" id="modal-submit" onclick="submitSignIn()">Continue</button>
+    <div class="signin-note">This is a portfolio demo — no real data is stored.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let stops=0;
+document.getElementById('stop-row').addEventListener('click',e=>{const b=e.target.closest('.sb');if(!b)return;document.querySelectorAll('.sb').forEach(x=>x.classList.remove('on'));b.classList.add('on');stops=parseInt(b.dataset.v);});
+function updRoute(){const s=document.getElementById('source').value,d=document.getElementById('dest').value,el=document.getElementById('route-ind');if(s&&d){el.style.display='flex';document.getElementById('route-txt').innerHTML=`<strong>${s}</strong> &nbsp;→&nbsp; <strong>${d}</strong>`}else el.style.display='none';}
+function calcDur(){const dep=document.getElementById('dep').value,arr=document.getElementById('arr').value;if(!dep||!arr)return;const[dh,dm]=dep.split(':').map(Number),[ah,am]=arr.split(':').map(Number);let diff=(ah*60+am)-(dh*60+dm);if(diff<=0)diff+=1440;if(diff>0)document.getElementById('dur').value=(diff/60).toFixed(1);}
+function toast(msg,ok=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(ok?' ok':'');setTimeout(()=>{t.className='toast'},3200);}
+
+// ── API endpoint — points to the Flask backend (app.py)
+const API_URL = 'http://localhost:5000/predict';
+
+async function predict(){
+  const airline  = document.getElementById('airline').value;
+  const source   = document.getElementById('source').value;
+  const dest     = document.getElementById('dest').value;
+  const jdate    = document.getElementById('jdate').value;
+  const dep      = document.getElementById('dep').value;
+  const arr      = document.getElementById('arr').value;
+  const durInp   = document.getElementById('dur').value;
+  const infoCode = parseInt(document.getElementById('info').value);
+
+  // ── Client-side validation
+  if(!airline){toast('Please select an airline');return;}
+  if(!source){toast('Please select departure city');return;}
+  if(!dest){toast('Please select arrival city');return;}
+  if(source===dest){toast('Source and destination must differ');return;}
+  if(!jdate){toast('Please select journey date');return;}
+  if(!dep){toast('Please set departure time');return;}
+  if(!arr){toast('Please set arrival time');return;}
+
+  const btn = document.getElementById('pbtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Analysing…';
+
+  // ── Build payload — field names match app.py /predict exactly
+  const payload = {
+    airline      : airline,
+    source       : source,
+    destination  : dest,
+    journey_date : jdate,
+    dep_time     : dep,
+    arr_time     : arr,
+    duration_hrs : durInp ? parseFloat(durInp) : 0,
+    stops        : stops,
+    info_code    : infoCode
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method : 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body   : JSON.stringify(payload)
+    });
+
+    if(!response.ok){
+      const err = await response.json().catch(()=>({error:'Server error'}));
+      throw new Error(err.error || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // ── Populate result card
+    const price = result.predicted_price;
+    const lo    = result.price_range_low;
+    const hi    = result.price_range_high;
+    const seatClass = result.seat_class;
+    const conf  = result.confidence;
+
+    document.getElementById('res-price').textContent = `₹${price.toLocaleString('en-IN')}`;
+    document.getElementById('res-sub').textContent   = `Range: ₹${lo.toLocaleString('en-IN')} – ₹${hi.toLocaleString('en-IN')}`;
+
+    const classMap = {
+      'Economy'        : {cls:'eco',  icon:'🪑', label:'Economy'},
+      'Premium Economy': {cls:'prem', icon:'💺', label:'Premium Economy'},
+      'Business'       : {cls:'biz',  icon:'🛫', label:'Business Class'}
+    };
+    const ci = classMap[seatClass] || classMap['Economy'];
+    document.getElementById('class-badge').innerHTML = `<div class="class-badge ${ci.cls}">${ci.icon} ${ci.label}</div>`;
+    document.getElementById('class-sub').textContent = 'Based on airline, price & route';
+
+    document.getElementById('conf-pct').textContent    = conf + '%';
+    document.getElementById('conf-fill').style.width   = conf + '%';
+
+    document.getElementById('res').className = 'res show';
+    toast('Prediction complete!', true);
+    document.getElementById('res').scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  } catch(err) {
+    toast('Error: ' + err.message);
+    console.error('Prediction API error:', err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Predict Price & Class';
+  }
+}
+function resetForm(){['airline','source','dest','info'].forEach(id=>document.getElementById(id).value='');['jdate','dep','arr','dur'].forEach(id=>document.getElementById(id).value='');document.querySelectorAll('.sb').forEach((b,i)=>b.classList.toggle('on',i===0));stops=0;document.getElementById('res').className='res';document.getElementById('route-ind').style.display='none';}
+// ── DATA VISUALISATION CHARTS ───────────────────────────────────────
+const CHART_DEFAULTS = {
+  responsive:true, maintainAspectRatio:true,
+  plugins:{
+    legend:{display:false},
+    tooltip:{
+      backgroundColor:'rgba(10,10,10,0.92)',
+      borderColor:'rgba(255,215,0,0.3)',borderWidth:1,
+      titleColor:'#FFD700',titleFont:{family:'Urbanist',weight:'800',size:13},
+      bodyColor:'rgba(255,255,255,0.75)',bodyFont:{family:'Urbanist',size:12},
+      padding:12,cornerRadius:8,
+      callbacks:{label:ctx=>`  ₹${Math.round(ctx.parsed.y||ctx.parsed).toLocaleString('en-IN')}`}
+    }
+  },
+  scales:{
+    x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(255,255,255,0.45)',font:{family:'Urbanist',weight:'600',size:11}}},
+    y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'rgba(255,255,255,0.45)',font:{family:'Urbanist',size:11},callback:v=>'₹'+v.toLocaleString('en-IN')},beginAtZero:false}
+  }
+};
+
+// ── 1. AIRLINE CHART ────────────────────────────────────────────────
+const airlineData = {
+  labels:['IndiGo','SpiceJet','GoAir','Air Asia','Trujet','Jet Airways','Air India','Multi-Carrier','Vistara','Vistara Prem','Multi-Prem','Jet Business'],
+  values:[4100,4400,4600,4900,4700,6400,7600,7800,8100,11000,10000,14000]
+};
+const airlineColors = airlineData.values.map(v=>
+  v<5000?'rgba(74,222,128,0.75)':v<8000?'rgba(255,215,0,0.75)':v<11000?'rgba(251,191,36,0.75)':'rgba(248,113,113,0.75)'
+);
+const airlineBorders = airlineData.values.map(v=>
+  v<5000?'#4ade80':v<8000?'#FFD700':v<11000?'#fbbf24':'#f87171'
+);
+const chartAirline = new Chart(document.getElementById('chart-airline'),{
+  type:'bar',
+  data:{labels:airlineData.labels,datasets:[{
+    data:airlineData.values,
+    backgroundColor:airlineColors,
+    borderColor:airlineBorders,
+    borderWidth:2,borderRadius:6,borderSkipped:false
+  }]},
+  options:{...CHART_DEFAULTS,
+    plugins:{...CHART_DEFAULTS.plugins,
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip,
+        callbacks:{
+          title:ctx=>`${ctx[0].label}`,
+          label:ctx=>`  Avg Fare: ₹${ctx.parsed.y.toLocaleString('en-IN')}`
+        }
+      }
+    }
+  }
+});
+
+// ── 2. MONTH TREND CHART ────────────────────────────────────────────
+const monthData = {
+  labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  values:[6100,5900,5950,6200,7200,7820,7350,6400,4950,5600,7400,7650]
+};
+const chartMonth = new Chart(document.getElementById('chart-month'),{
+  type:'line',
+  data:{labels:monthData.labels,datasets:[{
+    data:monthData.values,
+    borderColor:'#FFD700',backgroundColor:'rgba(255,215,0,0.08)',
+    borderWidth:2.5,pointBackgroundColor:'#FFD700',pointRadius:5,
+    pointHoverRadius:7,fill:true,tension:0.4
+  }]},
+  options:{...CHART_DEFAULTS,
+    plugins:{...CHART_DEFAULTS.plugins,
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip,
+        callbacks:{
+          title:ctx=>`${ctx[0].label}`,
+          label:ctx=>`  Avg Fare: ₹${ctx.parsed.y.toLocaleString('en-IN')}`
+        }
+      }
+    }
+  }
+});
+
+// ── 3. DAY OF WEEK CHART ────────────────────────────────────────────
+const dayData = {
+  labels:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+  values:[5780,5620,5690,5850,6050,6240,6410]
+};
+const dayColors = dayData.values.map((v,i)=>i>=5?'rgba(251,191,36,0.75)':'rgba(255,215,0,0.55)');
+const dayBorders = dayData.values.map((v,i)=>i>=5?'#fbbf24':'#FFD700');
+const chartDay = new Chart(document.getElementById('chart-day'),{
+  type:'bar',
+  data:{labels:dayData.labels,datasets:[{
+    data:dayData.values,
+    backgroundColor:dayColors,borderColor:dayBorders,
+    borderWidth:2,borderRadius:6,borderSkipped:false
+  }]},
+  options:{...CHART_DEFAULTS,
+    plugins:{...CHART_DEFAULTS.plugins,
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip,
+        callbacks:{
+          title:ctx=>`${ctx[0].label}`,
+          label:ctx=>`  Avg Fare: ₹${ctx.parsed.y.toLocaleString('en-IN')}`
+        }
+      }
+    }
+  }
+});
+
+// ── 4. STOPS IMPACT CHART ────────────────────────────────────────────
+const stopsData = {
+  labels:['Non-Stop (0)','1 Stop','2 Stops','3 Stops','4 Stops'],
+  values:[5200,6800,9400,11200,13500]
+};
+const stopsColors=['rgba(74,222,128,0.8)','rgba(255,215,0,0.8)','rgba(251,191,36,0.8)','rgba(248,113,113,0.7)','rgba(220,38,38,0.75)'];
+const stopsBorders=['#4ade80','#FFD700','#fbbf24','#f87171','#dc2626'];
+const chartStops = new Chart(document.getElementById('chart-stops'),{
+  type:'bar',
+  data:{labels:stopsData.labels,datasets:[{
+    data:stopsData.values,
+    backgroundColor:stopsColors,borderColor:stopsBorders,
+    borderWidth:2,borderRadius:6,borderSkipped:false
+  }]},
+  options:{...CHART_DEFAULTS,
+    plugins:{...CHART_DEFAULTS.plugins,
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip,
+        callbacks:{
+          title:ctx=>`${ctx[0].label}`,
+          label:ctx=>`  Avg Fare: ₹${ctx.parsed.y.toLocaleString('en-IN')}`
+        }
+      }
+    }
+  }
+});
+
+// ── TAB SWITCHER ─────────────────────────────────────────────────────
+function switchChart(name, el){
+  ['airline','month','day','stops'].forEach(n=>{
+    document.getElementById('chart-'+n).style.display = n===name?'block':'none';
+    const stats = document.getElementById('viz-stats-'+n);
+    if(stats) stats.style.display = n===name?'grid':'none';
+  });
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+document.getElementById('jdate').value=new Date().toISOString().split('T')[0];
+
+// ── DEMO SIGN-IN MODAL ──────────────────────────────────────────────
+let currentProvider = '';
+
+function signInGoogle(){ currentProvider='google'; showSignInModal(); }
+function signInInstagram(){ currentProvider='instagram'; showSignInModal(); }
+
+function showSignInModal(){
+  const m = document.getElementById('signin-modal');
+  const isGoogle = currentProvider === 'google';
+  document.getElementById('modal-logo').innerHTML = isGoogle
+    ? `<svg width="40" height="40" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.7 35.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.3 4.1-4.1 5.5l6.2 5.2C37.9 38.6 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>`
+    : `<svg width="40" height="40" viewBox="0 0 24 24"><defs><radialGradient id="igm" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#igm)"/><path d="M12 7.2A4.8 4.8 0 1 0 12 16.8 4.8 4.8 0 0 0 12 7.2zm0 7.9A3.1 3.1 0 1 1 12 8.9 3.1 3.1 0 0 1 12 15.1zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z" fill="#fff"/></svg>`;
+  document.getElementById('modal-title').textContent = isGoogle ? 'Sign in with Google' : 'Sign in with Instagram';
+  document.getElementById('modal-email-label').textContent = isGoogle ? 'Email address' : 'Username or email';
+  document.getElementById('modal-submit').textContent = isGoogle ? 'Continue with Google' : 'Log In';
+  document.getElementById('modal-submit').className = isGoogle ? 'modal-submit google-submit' : 'modal-submit insta-submit';
+  document.getElementById('modal-email').value = '';
+  document.getElementById('modal-pass').value = '';
+  document.getElementById('modal-error').style.display = 'none';
+  m.classList.add('show');
+  setTimeout(()=> document.getElementById('modal-email').focus(), 100);
+}
+
+function closeModal(){
+  document.getElementById('signin-modal').classList.remove('show');
+}
+
+function submitSignIn(){
+  const email = document.getElementById('modal-email').value.trim();
+  const pass = document.getElementById('modal-pass').value;
+  const err = document.getElementById('modal-error');
+  if(!email){ err.textContent='Please enter your email.'; err.style.display='block'; return; }
+  if(!pass){ err.textContent='Please enter your password.'; err.style.display='block'; return; }
+  const btn = document.getElementById('modal-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff"></span> Signing in…';
+  setTimeout(()=>{
+    closeModal();
+    btn.disabled = false;
+    const name = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    const icon = currentProvider==='google' ? '🔵' : '📸';
+    toast(`${icon} Signed in as ${name}`, true);
+    // Update footer icon to show signed-in state
+    const btnEl = document.getElementById(currentProvider+'-icon-btn');
+    if(btnEl) btnEl.style.borderColor = currentProvider==='google' ? '#4ade80' : '#d6249f';
+  }, 1200);
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', e=>{
+  if(e.target.id==='signin-modal') closeModal();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeModal();
+  if(e.key==='Enter' && document.getElementById('signin-modal').classList.contains('show')) submitSignIn();
+});
+
+function shareWhatsApp(){
+  const price = document.getElementById('res-price')?.textContent;
+  const src = document.getElementById('source')?.value;
+  const dst = document.getElementById('dest')?.value;
+  let msg;
+  if(price && price !== '₹0' && src && dst){
+    msg = `✈ Flight Price Estimate\n\n🛫 ${src} → ${dst}\n💰 Estimated Fare: ${price}\n\nPowered by SkyFare AI — India's Smartest Fare Estimator\n${window.location.href}`;
+  } else {
+    msg = `✈ Check out SkyFare — India's AI-Powered Flight Price Predictor!\n\n${window.location.href}`;
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+}
+
+</script>
+</body>
+</html>
